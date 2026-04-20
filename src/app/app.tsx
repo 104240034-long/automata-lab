@@ -40,9 +40,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const isValidStart = states.some((s: any) => s.id === startState && !s.isAccept);
+    const isValidStart = states.some((s: any) => s.id === startState);
     if (!isValidStart) {
-      const fallback = states.find((s: any) => !s.isAccept);
+      const fallback = states.length > 0 ? states[0] : null;
       setStartState(fallback ? fallback.id : '');
     }
   }, [states, startState, setStartState]);
@@ -143,7 +143,7 @@ export default function App() {
             <div className="flex flex-col gap-1 w-32">
               <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Start State</label>
               <select disabled={playbackStatus === 'Animating'} value={startState} onChange={(e) => setStartState(e.target.value)} className="h-9 w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 text-sm focus:outline-none disabled:opacity-50">
-                {states.filter((s: any) => !s.isAccept).map((s: any) => <option key={s.id} value={s.id}>{s.id}</option>)}
+                {states.map((s: any) => <option key={s.id} value={s.id}>{s.id}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 max-w-md">
