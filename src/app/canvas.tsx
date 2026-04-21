@@ -97,16 +97,28 @@ export const GraphCanvas = () => {
             </svg>
 
             {states.map((s: any) => (
-                <div key={s.id} onPointerDown={(e) => handlePointerDown(e, s.id)} className="absolute flex flex-col items-center cursor-grab active:cursor-grabbing group" style={{ left: s.x - 40, top: s.y - 40 }}>
-                    <div className={`w-20 h-20 rounded-full flex items-center justify-center border-2 transition-all 
+                <div 
+                    key={s.id} 
+                    onPointerDown={(e) => handlePointerDown(e, s.id)} 
+                    className="absolute flex flex-col items-center justify-center cursor-grab active:cursor-grabbing group" 
+                    style={{ left: s.x, top: s.y, transform: 'translate(-50%, -50%)' }}
+                >
+                    <div className={`relative h-12 min-w-[3rem] px-3 rounded-full flex items-center justify-center border-2 transition-all 
                         ${s.isAccept ? 'border-neutral-300' : 'border-neutral-600'} 
                         ${panelState.isOpen && panelState.targetId === s.id ? 'bg-neutral-800 border-white' : 'bg-neutral-900 group-hover:bg-neutral-800'}
                         ${animStep >= 0 && animStep % 2 === 0 && trace[Math.floor(animStep / 2)] === s.id ? 'border-blue-500 bg-blue-950 scale-110 z-10' : ''}`}>
                         
-                        {s.isAccept && <div className="absolute inset-1.5 rounded-full border-2 border-neutral-300"></div>}
-                        <span className="text-lg font-bold">{s.id}</span>
+                        {/* The double circle for Accept States */}
+                        {s.isAccept && <div className="absolute inset-1 rounded-full border-2 border-neutral-300 pointer-events-none"></div>}
+                        
+                        <span className="text-sm font-bold truncate text-center">{s.id}</span>
                     </div>
-                    {startState === s.id && <div className="absolute -bottom-6 px-2 py-0.5 bg-neutral-800 rounded text-[10px] font-bold text-neutral-400">START</div>}
+                    
+                    {startState === s.id && (
+                        <div className="absolute -bottom-5 px-1.5 py-0.5 bg-neutral-800 rounded text-[9px] font-bold text-neutral-400 whitespace-nowrap">
+                            START
+                        </div>
+                    )}
                 </div>
             ))}
         </div>

@@ -20,16 +20,43 @@ export const Panel = () => {
         transitions, setTransitions, 
         panelState, setPanelState, 
         draftEdge, setDraftEdge,
-        panelDrag, setPanelDrag 
+        panelDrag, setPanelDrag,
+        startState, setStartState // <-- Add these two
     } = useGraph();
 
     if (!panelState.isOpen) return null;
 
-    const handlePanelDragMove = (e: any) => {
+    const handleNodeIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newId = e.target.value;
+        const oldId = panelState.targetId;
+        
+        // 1. Update the node's ID in the states array
+        setStates(states.map((s: any) => s.id === oldId ? { ...s, id: newId } : s));
+        
+        // 2. Update all transitions that were connected to the old ID
+        setTransitions(transitions.map((t: any) => ({
+            ...t,
+            from: t.from === oldId ? newId : t.from,
+            to: t.to === oldId ? newId : t.to
+        })));
+
+        // 3. Update the start state if the renamed node was the start node
+        if (startState === oldId) {
+            setStartState(newId);
+        }
+
+        // 4. Update the panel's active target to the new ID so the panel stays open
+        setPanelState((prev: any) => ({ ...prev, targetId: newId }));
+    };
+
+    // --- ADDED MISSING DRAG HANDLER ---
+    const handlePanelDragMove = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!panelDrag.isDragging) return;
-        const newX = Math.max(0, Math.min(window.innerWidth - 256, e.clientX - panelDrag.offsetX));
-        const newY = Math.max(0, Math.min(window.innerHeight - 200, e.clientY - panelDrag.offsetY));
-        setPanelState((prev: any) => ({ ...prev, x: newX, y: newY }));
+        setPanelState((prev: any) => ({
+            ...prev,
+            x: e.clientX - panelDrag.offsetX,
+            y: e.clientY - panelDrag.offsetY
+        }));
     };
 
     return (
@@ -63,7 +90,7 @@ export const Panel = () => {
                     <>
                         <div>
                             <label className="text-xs text-neutral-500">ID</label>
-                            <input disabled value={panelState.targetId} className="w-full bg-neutral-950 border border-neutral-800 rounded p-1 text-sm text-neutral-500" />
+                            <input value={panelState.targetId} onChange={handleNodeIdChange} className="w-full bg-neutral-950 border border-neutral-800 rounded p-1 text-sm text-white focus:outline-none focus:border-neutral-600" />
                         </div>
                         <label className="flex justify-between text-sm items-center">
                             Accept State
@@ -95,7 +122,23 @@ export const Panel = () => {
                             <input autoFocus value={draftEdge.symbol} onChange={(e) => setDraftEdge({...draftEdge, symbol: e.target.value})} className="w-full bg-neutral-950 border border-neutral-800 rounded p-1 text-sm text-white" placeholder="e.g. a, b" />
                         </div>
                         <Button primary className="w-full bg-blue-400 text-black font-bold hover:bg-blue-500 border-transparent" onClick={() => { 
-                            setTransitions([...transitions, { id: `t${Date.now()}`, from: draftEdge.from, to: draftEdge.to, symbol: draftEdge.symbol }]);
+                            const existingEdge = transitions.find((t: any) => t.from === draftEdge.from && t.to === draftEdge.to);
+                            
+                            if (existingEdge) {
+                                // Merge existing and new symbols, clean up whitespace, and remove duplicates
+                                const combined = `${existingEdge.symbol},${draftEdge.symbol}`;
+                                const uniqueSymbols = Array.from(new Set(combined.split(',').map(s => s.trim()).filter(Boolean)));
+                                
+                                setTransitions(transitions.map((t: any) => 
+                                    t.id === existingEdge.id 
+                                    ? { ...t, symbol: uniqueSymbols.join(', ') } 
+                                    : t
+                                ));
+                            } else {
+                                // Safe to create a brand new edge
+                                setTransitions([...transitions, { id: `t${Date.now()}`, from: draftEdge.from, to: draftEdge.to, symbol: draftEdge.symbol }]);
+                            }
+                            
                             setPanelState((prev: any) => ({ ...prev, isOpen: false })); 
                         }}>
                             <Save className="w-4 h-4 mr-2" /> Save Edge
